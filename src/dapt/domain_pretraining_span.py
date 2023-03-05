@@ -73,7 +73,7 @@ trainArgs = TrainingArguments(
     save_strategy='steps',
     save_steps=args.save_steps,
     per_device_train_batch_size=args.train_batch_size,
-    logging_steps=10
+    # logging_steps=10
 )
 
 trainer = Trainer(

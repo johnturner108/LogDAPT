@@ -84,17 +84,6 @@ tokenized_datasets = tokenized_datasets.remove_columns(["text"])
 tokenized_datasets = tokenized_datasets.rename_column("label", "labels")
 tokenized_datasets.set_format("torch")
 
-small_train_dataset = tokenized_datasets["train"].shuffle(seed=args.seed)
-small_test_dataset = tokenized_datasets["test"].shuffle(seed=args.seed)
-small_eval_dataset = tokenized_datasets["eval"].shuffle(seed=args.seed)
-
-train_dataloader = DataLoader(small_train_dataset, shuffle=True, drop_last=True, batch_size=args.train_batch_size)
-test_dataloader = DataLoader(small_test_dataset, drop_last=True, batch_size=args.test_batch_size)
-eval_dataloader = DataLoader(small_eval_dataset, drop_last=True, batch_size=args.eval_batch_size)
-
-
-num_training_steps = stop_step if not stop_step == 10000 else args.train_epochs * len(train_dataloader)
-num_testing_steps = len(test_dataloader)
 
 from torch.optim import AdamW
 optimizer = AdamW(model.parameters(), lr=args.learning_rate)
@@ -116,6 +105,9 @@ def get_acc_rec_f1(labels, predictions):
 
 
 def test():
+    small_test_dataset = tokenized_datasets["test"].shuffle(seed=args.seed)
+    test_dataloader = DataLoader(small_test_dataset, drop_last=True, batch_size=args.test_batch_size)
+    num_testing_steps = len(test_dataloader)
     model.eval()
     total_test_step = 1
     total_preds = []
@@ -171,6 +163,11 @@ def test():
 
 
 def train():
+    small_train_dataset = tokenized_datasets["train"].shuffle(seed=args.seed)
+    small_eval_dataset = tokenized_datasets["eval"].shuffle(seed=args.seed)
+    train_dataloader = DataLoader(small_train_dataset, shuffle=True, drop_last=True, batch_size=args.train_batch_size)
+    eval_dataloader = DataLoader(small_eval_dataset, drop_last=True, batch_size=args.eval_batch_size)
+    num_training_steps = stop_step if not stop_step == 10000 else args.train_epochs * len(train_dataloader)
     criterion = torch.nn.CrossEntropyLoss()
     progress_bar = tqdm(range(num_training_steps))
     model.train()
@@ -224,7 +221,6 @@ def train():
 
             progress_bar.update(1)
             total_train_step += 1
-        torch.save(model, save_model)
         if epoch >= args.train_epochs:
             torch.save(model, save_model)
             break

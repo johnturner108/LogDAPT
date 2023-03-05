@@ -14,9 +14,7 @@ Results on HDFS, BGL and Thunderbird:
     <th class="tg-0pky">LogDAPT (MLM)</th>
     <th class="tg-0pky">LogDAPT (Span)</th>
   </tr>
-  <tr>
     <td class="tg-c3ow" colspan="5">HDFS</td>
-  </tr>
   <tr>
     <td class="tg-0pky">Precision</td>
     <td class="tg-0pky">0.96</td>
@@ -38,9 +36,7 @@ Results on HDFS, BGL and Thunderbird:
     <td class="tg-0pky">0.9681</td>
     <td class="tg-0pky">0.9708</td>
   </tr>
-  <tr>
     <td class="tg-baqh" colspan="5">BGL</td>
-  </tr>
   <tr>
     <td class="tg-0lax">Precision</td>
     <td class="tg-0lax">0.98</td>
@@ -62,7 +58,7 @@ Results on HDFS, BGL and Thunderbird:
     <td class="tg-0lax">0.973</td>
     <td class="tg-0lax">0.9706</td>
   </tr>
-  <td class="tg-baqh" colspan="5">Thunderbird</td>
+    <td class="tg-baqh" colspan="5">Thunderbird</td>
   <tr>
     <td class="tg-0lax">Precision</td>
     <td class="tg-0lax">0.93</td>
@@ -92,25 +88,9 @@ Results on HDFS, BGL and Thunderbird:
 
 Some codes are borrowed from LogBERT(https://github.com/HelenGuohx/logbert) and SpanBERT(https://github.com/facebookresearch/SpanBERT)
 
-## Trained Models
-[LogDAPT_HDFS_MLM](https://drive.google.com/open?id=1kKWoV0QCbeIuFt85beQgJ4v0lujaXobJ)
-
-[LogDAPT_HDFS_Span](https://drive.google.com/open?id=1kKWoV0QCbeIuFt85beQgJ4v0lujaXobJ)
-
-[LogDAPT_BGL_MLM](https://drive.google.com/open?id=1kKWoV0QCbeIuFt85beQgJ4v0lujaXobJ)
-
-[LogDAPT_BGL_Span](https://drive.google.com/open?id=1kKWoV0QCbeIuFt85beQgJ4v0lujaXobJ)
-
-[LogDAPT_Thunderbird_MLM](https://drive.google.com/open?id=1kKWoV0QCbeIuFt85beQgJ4v0lujaXobJ)
-
-[LogDAPT_Thunderbird_Span](https://drive.google.com/open?id=1kKWoV0QCbeIuFt85beQgJ4v0lujaXobJ)
-
-## Preprocessed Data
-[Preprocessed data]()
-
 ## Data Preprocessing
 
-**Use the `.py` files under `src/preprocessing` to preprocess the log data**
+**Use the `.py` files under `src/preprocessing` to preprocess the log data.**
 ### 1. HDFS
 ```
 python data_process_hdfs.py -input_dir INPUT_DATA_PATH -output_dir OUTPUT_DATA_PATH -log_file LOG_FILE_NAME -train_ratio 0.8 -shuffle true -small_train_len 2000 -small_train_len_normal 1000 -dapt_train_steps 5000 -dapt_batch_size 16 -eval_size 5000 -seed 21
@@ -137,20 +117,20 @@ python data_process_tbird.py -input_dir INPUT_DATA_PATH -output_dir OUTPUT_DATA_
 * We set `-step_size` to `1`, and `-window_size` to `20` for both BGL and Thunderbird dataset according to ASE 2021 paper [Log-based Anomaly Detection Without Log Parsing]()
 
 ## DAPT Training
-
-### 1 MLM
+**Use the `.py` files under `src/dapt` to perform DAPT Training.**
+### 1. MLM
 ```
 python domain_pretraining_mlm.py -dataset DATASET_NAME -train_file TRAIN_FILE_PATH -model_output MODEL_PATH -block_size 512 -mlm_probability 0.15 -learning_rate 5e-5 -visible_gpus 0,1 -num_train_epochs 1 -max_steps -1 -save_steps 500 -train_batch_size 16
 ```
 * The choices of `DATASET_NAME` are `hdfs`, `bgl` and `tbird`, make sure that `DATASET_NAME` corresponds to `TRAIN_FILE_PATH` and `MODEL_PATH`
 * `TRAIN_FILE_PATH` is the DAPTtrain.txt file produced by data preprocessing, for example `../../preprocessed_data/hdfs/DAPTtrain5000_16.txt`
-* `MODEL_PATH` is the path where you want to save your models, for example `LogDAPT/models/hdfs`
+* `MODEL_PATH` is the path where you want to save your models, default is `LogDAPT/models/DATASET_NAME/mlm`
 * `-block_size` is the maximum number of input tokens you wish the model to process.
 * `-mlm_probability` is the percentage of tokens that will be masked.
 * `-max_steps` is the number of steps you wish the model be trained for, we trained the model for 5000 steps in our paper.
 * Checkpoints are saved per `save_steps` steps.
 
-### 2 Span
+### 2. Span
 ```
 python domain_pretraining_span.py -dataset DATASET_NAME -train_file TRAIN_FILE_PATH -model_output MODEL_PATH -block_size 512 -mlm_probability 0.15 -learning_rate 5e-5 -visible_gpus 0,1 -num_train_epochs 1 -max_steps -1 -save_steps 500 -train_batch_size 16
 ```
@@ -158,16 +138,17 @@ python domain_pretraining_span.py -dataset DATASET_NAME -train_file TRAIN_FILE_P
 
 
 ## Anomaly Training and Evaluation
-### Training
+**Use the `train.py` file under `src/anomaly_detecion` to perform anomaly training and evaluation.**
+### 1. Training
 ```
 python train.py -dataset DATASET_NAME -do_train -pretrained_model PRETRAINED_MODEL_PATH -train_file TRAIN_FILE_PATH -test_file TEST_FILE_PATH -train_batch_size 32 -eval_batch_size 64 -test_batch_size 32 -learning_rate 5e-5 -train_epochs 2 -train_show_step 50 -test_show_step 50 -visible_gpu 0 -seed 43
 ```
 
 * The choices of `DATASET_NAME` are `hdfs`, `bgl` and `tbird`, make sure that `DATASET_NAME` corresponds to `PRETRAINED_MODEL_PATH `, `TRAIN_FILE_PATH` and `TEST_FILE_PATH`
-* If `PRETRAINED_MODEL_PATH` is specified, trained model will be automatically save in `PRETRAINED_MODEL_PATH`.
-### Testing
+* If `PRETRAINED_MODEL_PATH` is specified, trained model will be automatically saved in `PRETRAINED_MODEL_PATH`.
+### 2. Testing
 ```
 python train.py -dataset DATASET_NAME -do_test -saved_model SAVED_MODEL_PATH -test_file TEST_FILE_PATH -test_batch_size 32 -test_show_step 50 -visible_gpu 0 -seed 43
 ```
-* `SAVED_MODEL_PATH` is the directory of saved anomaly detection model.
+* `SAVED_MODEL_PATH` is the directory of trained anomaly detection model.
 
